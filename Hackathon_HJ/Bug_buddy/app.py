@@ -7,6 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from src.template_builder import build_template
+from src.claude_analyzer import analyze_issue
 
 load_dotenv()
 
@@ -181,6 +182,51 @@ def main() -> None:
                 st.success("템플릿이 생성됐어요! 아래 내용을 레드마인에 붙여넣어 주세요.")
                 st.subheader("📋 레드마인 Description 템플릿")
                 st.code(template_text, language="markdown")
+
+                # --- Claude 분석 버튼 (Sprint 2) ---
+                st.divider()
+                api_key = os.getenv("ANTHROPIC_API_KEY", "")
+                if not api_key:
+                    st.info("💡 ANTHROPIC_API_KEY를 설정하면 Claude가 누락 필드와 추천 제목을 분석해드려요.")
+                else:
+                    if st.button("🤖 추가로 뭐가 더 필요할지 물어보기", use_container_width=True):
+                        with st.spinner("Claude가 이슈를 분석하고 있어요..."):
+                            analysis, err = analyze_issue(form_data, api_key=api_key)
+                        if err:
+                            st.error(f"분석 중 오류가 발생했어요: {err}")
+                        else:
+                            st.session_state["analysis"] = analysis
+
+                if "analysis" in st.session_state and st.session_state["analysis"]:
+                    analysis = st.session_state["analysis"]
+                    st.subheader("🤖 Claude 분석 결과")
+
+                    if analysis.get("missing_fields"):
+                        st.markdown("**누락된 정보:**")
+                        for f in analysis["missing_fields"]:
+                            st.markdown(f"- {f}")
+
+                    if analysis.get("questions_to_ask"):
+                        st.markdown("**추가 질문:**")
+                        for q in analysis["questions_to_ask"]:
+                            st.markdown(f"- {q}")
+
+                    if analysis.get("risk_flags"):
+                        st.warning("⚠️ 위험 플래그: " + ", ".join(analysis["risk_flags"]))
+
+                    st.markdown(f"**신뢰도:** {analysis.get('confidence', 0):.0%}")
+
+                    st.markdown("**추천 레드마인 제목 (수정 가능):**")
+                    st.text_input(
+                        "추천 제목",
+                        value=analysis.get("redmine_subject", ""),
+                        key="suggested_subject",
+                        label_visibility="collapsed",
+                    )
+
+                    with st.expander("🔍 Claude 원본 응답 보기"):
+                        import json as _json
+                        st.code(_json.dumps(analysis, ensure_ascii=False, indent=2), language="json")
         else:
             st.markdown(
                 "왼쪽에서 이슈 정보를 입력하고\n"
