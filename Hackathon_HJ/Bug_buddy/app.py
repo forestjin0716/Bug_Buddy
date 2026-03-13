@@ -7,6 +7,7 @@ import streamlit as st
 from dotenv import load_dotenv
 
 from src.template_builder import build_template
+from src.code_searcher import load_customers, get_customer_by_name, search_files
 
 load_dotenv()
 
@@ -181,6 +182,40 @@ def main() -> None:
                 st.success("템플릿이 생성됐어요! 아래 내용을 레드마인에 붙여넣어 주세요.")
                 st.subheader("📋 레드마인 Description 템플릿")
                 st.code(template_text, language="markdown")
+
+                # --- 코드 후보 검색 (Sprint 3) ---
+                st.divider()
+                st.subheader("🔍 관련 코드 파일 추천")
+                customers_data, _ = load_customers("data/customers.json")
+                selected_customer = get_customer_by_name(customers_data, customer)
+
+                if not selected_customer or not selected_customer.get("local_path"):
+                    st.info("💡 data/customers.json에 고객사 local_path를 설정하면 관련 코드 파일을 추천해드려요.")
+                else:
+                    keyword_input = st.text_input(
+                        "검색 키워드 (쉼표로 구분)",
+                        placeholder="예: login, authenticate, token",
+                        key="search_keywords",
+                    )
+                    if st.button("🔎 추천 코드 확인하기", use_container_width=True):
+                        keywords = [k.strip() for k in keyword_input.split(",") if k.strip()]
+                        if not keywords:
+                            st.warning("키워드를 입력해 주세요.")
+                        else:
+                            local_path = selected_customer["local_path"]
+                            paths = selected_customer.get("paths", [""])
+                            with st.spinner("코드 파일을 검색하고 있어요..."):
+                                results, err = search_files(local_path, paths, keywords, top_n=12)
+                            if err:
+                                st.error(f"검색 오류: {err}")
+                            elif not results:
+                                st.info("매칭되는 파일을 찾지 못했어요.")
+                            else:
+                                st.success(f"{len(results)}개 파일을 찾았어요.")
+                                for r in results:
+                                    with st.expander(f"📄 {r['path'].split('/')[-1]}  (점수: {r['score']})"):
+                                        st.caption(r["path"])
+                                        st.code(r["excerpt"], language="java")
         else:
             st.markdown(
                 "왼쪽에서 이슈 정보를 입력하고\n"
