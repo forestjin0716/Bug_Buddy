@@ -18,6 +18,27 @@ def load_customers() -> list:
     except (json.JSONDecodeError, OSError):
         return []
 
+def check_environment() -> dict:
+    return {
+        "anthropic_api_key": bool(os.getenv("ANTHROPIC_API_KEY")),
+        "redmine_base_url": bool(os.getenv("REDMINE_BASE_URL")),
+        "redmine_api_key": bool(os.getenv("REDMINE_API_KEY")),
+        "customers_json": Path("data/customers.json").exists(),
+    }
+
+def show_env_warnings(env_status: dict) -> None:
+    warnings = []
+    if not env_status["anthropic_api_key"]:
+        warnings.append("⚠️ Claude API 키가 설정되지 않았어요. .env 파일에 ANTHROPIC_API_KEY를 추가해 주세요.")
+    if not env_status["redmine_base_url"] or not env_status["redmine_api_key"]:
+        warnings.append("⚠️ Redmine 연동 설정이 아직 안 되어 있어요. 템플릿 복붙만 사용할 수 있어요.")
+    if not env_status["customers_json"]:
+        warnings.append("⚠️ customers.json을 만들어 주세요. 코드 후보 검색 기능을 사용하려면 data/customers.json이 필요해요.")
+    if warnings:
+        with st.expander("아직 설정이 안 된 부분이 있어요 - 클릭해서 확인하기", expanded=True):
+            for msg in warnings:
+                st.warning(msg)
+
 def render_left_column() -> None:
     st.subheader("📝 이슈 작성")
     with st.container(border=True):
@@ -38,6 +59,8 @@ def main() -> None:
     st.title("🐛 버그버디 - 이슈 정리 도우미")
     st.caption("안녕하세요! 버그버디가 이슈 정리를 도와드릴게요.")
     st.divider()
+    env_status = check_environment()
+    show_env_warnings(env_status)
     left_col, right_col = st.columns([1, 1])
     with left_col:
         render_left_column()
