@@ -29,3 +29,6 @@ Thumbs.db
 
 # 로그
 *.log
+
+# Claude Code 내부 파일
+.claude/
