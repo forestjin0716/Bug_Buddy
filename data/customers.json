@@ -1,0 +1,16 @@
+[
+  {
+    "id": "sample-corp",
+    "name": "샘플제약",
+    "source_targets": [
+      {
+        "label": "샘플제약 main (customer/sample-corp)",
+        "repo_url": "https://git.internal/sample-corp.git",
+        "branch": "main",
+        "local_path": "/home/dev/repos/sample-corp",
+        "paths": ["front-end/", "back-end/"],
+        "priority": 1
+      }
+    ]
+  }
+]
