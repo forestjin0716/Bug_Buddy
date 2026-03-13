@@ -18,6 +18,17 @@ def load_customers() -> list:
     except (json.JSONDecodeError, OSError):
         return []
 
+def inject_custom_css() -> None:
+    st.markdown("""
+        <style>
+        .stButton>button { border-radius: 12px; background-color: #C0392B; color: white; border: none; font-weight: bold; }
+        .stButton>button:hover { background-color: #A93226; color: white; }
+        .block-container { padding: 1.5rem; }
+        h1 { color: #C0392B; }
+        h2, h3 { color: #922B21; }
+        hr { border-color: #F5B7B1; }
+        </style>""", unsafe_allow_html=True)
+
 def check_environment() -> dict:
     return {
         "anthropic_api_key": bool(os.getenv("ANTHROPIC_API_KEY")),
@@ -56,6 +67,7 @@ def render_right_column() -> None:
         st.info("버그버디가 정리한 이슈 템플릿과 Claude 분석 결과를 확인할 수 있어요.")
 
 def main() -> None:
+    inject_custom_css()
     st.title("🐛 버그버디 - 이슈 정리 도우미")
     st.caption("안녕하세요! 버그버디가 이슈 정리를 도와드릴게요.")
     st.divider()
