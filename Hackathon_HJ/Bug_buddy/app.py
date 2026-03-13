@@ -8,15 +8,19 @@ from dotenv import load_dotenv
 
 from src.template_builder import build_template
 from src.code_searcher import load_customers, get_customer_by_name, search_files
+from src.redmine_client import load_trackers_with_fallback, load_statuses_with_fallback
 
 load_dotenv()
 
 # --- 이슈 입력 폼 상수 ---
-# Phase 4에서 Redmine API 응답으로 교체 예정
-TRACKERS = ["Common", "Feature", "Defect", "Request", "Patch", "Issue", "Review"]
-STATUSES = ["New", "Confirm", "Assigned", "In progress", "Resolved", "Closed", "Need Feedback", "Rejected"]
 PRIORITIES = ["낮음", "보통", "높음", "즉시"]
 CATEGORIES = ["SFE", "주문,반품,수금", "지출보고"]
+
+# Redmine API에서 동적 로드 (실패 시 fallback 사용)
+_redmine_url = os.getenv("REDMINE_URL", "")
+_redmine_key = os.getenv("REDMINE_API_KEY", "")
+TRACKERS = load_trackers_with_fallback(_redmine_url, _redmine_key)
+STATUSES = load_statuses_with_fallback(_redmine_url, _redmine_key)
 
 # Phase 3에서 customers.json 기반으로 교체 예정
 CUSTOMERS = [
@@ -91,8 +95,8 @@ def main() -> None:
             # --- 메타데이터 영역 ---
             st.markdown("#### 기본 정보")
 
-            tracker = st.selectbox("Tracker", options=TRACKERS, index=TRACKERS.index("Defect"))
-            status = st.selectbox("Status", options=STATUSES, index=STATUSES.index("New"))
+            tracker = st.selectbox("Tracker", options=TRACKERS, index=TRACKERS.index("Defect") if "Defect" in TRACKERS else 0)
+            status = st.selectbox("Status", options=STATUSES, index=STATUSES.index("New") if "New" in STATUSES else 0)
             start_date = st.date_input("Start date", value=datetime.date.today())
             priority = st.selectbox("Priority", options=PRIORITIES, index=PRIORITIES.index("보통"))
             category = st.selectbox("Category", options=CATEGORIES)
